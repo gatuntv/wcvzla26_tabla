@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCVZLA26 - Panel de Control</title>
+    <!-- Tailwind CSS para diseño y adaptabilidad responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para tipografía de alta lectura -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Fondo negro absoluto a juego con la web principal */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .glass-panel {
+            background: #090909;
+            border: 1px solid #161616;
+        }
+        .tab-active {
+            border-bottom: 2px solid #ffffff;
+            color: #ffffff;
+            background: #090909;
+        }
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen py-8 px-4 sm:px-6 lg:px-8 antialiased">
+
+    <!-- Contenedor del Panel Administrativo -->
+    <main class="max-w-6xl mx-auto">
+        
+        <!-- Cabecera de Administración -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-6 border-b border-neutral-900">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">PANEL DE CONTROL</h1>
+                <p class="text-xs text-neutral-500 mt-1">Sugerencia: Puedes modificar los números a mano o registrar partidos en el botón de la derecha para auto-calcular todo.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <!-- Enlace público apuntando a index.html (Tablas) -->
+                <a href="index.html" class="px-4 py-2 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-bold transition-all flex items-center gap-2">
+                    Ver Tabla Pública ↗
+                </a>
+                <button onclick="recalculateAllGroupsStats()" class="px-4 py-2 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-xs font-bold transition-all flex items-center gap-2 text-neutral-300 hover:text-white">
+                    🔄 Sincronizar Historial
+                </button>
+                <button onclick="saveAllChanges()" class="px-4 py-2 rounded bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-lg shadow-white/5">
+                    Ordenar y Guardar Tabla
+                </button>
+                <button onclick="resetDataToZero()" class="px-3 py-2 rounded bg-red-950/40 hover:bg-red-950/80 border border-red-900/30 text-red-400 text-xs font-semibold transition-all">
+                    Reiniciar Todo
+                </button>
+            </div>
+        </div>
+
+        <!-- Pestañas de Navegación por Confederación -->
+        <div class="flex flex-nowrap overflow-x-auto gap-1 mb-6 border-b border-neutral-900 scrollbar-none">
+            <button onclick="switchConfederation('llanos')" id="tab-llanos" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CONMEBOL
+            </button>
+            <button onclick="switchConfederation('andes')" id="tab-andes" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CONCACAF
+            </button>
+            <button onclick="switchConfederation('centro')" id="tab-centro" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                UEFA
+            </button>
+            <button onclick="switchConfederation('zulara')" id="tab-zulara" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CAF
+            </button>
+            <button onclick="switchConfederation('oriente')" id="tab-oriente" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                AFC / OFC
+            </button>
+        </div>
+
+        <!-- Tabla de Edición -->
+        <div class="glass-panel rounded-xl overflow-hidden shadow-2xl border border-neutral-850">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-neutral-900/60 text-neutral-400 font-bold uppercase tracking-wider text-[10px] sm:text-xs border-b border-neutral-850">
+                            <th class="py-3.5 px-4">Selección</th>
+                            <th class="py-3.5 px-2 text-center w-14">PJ</th>
+                            <th class="py-3.5 px-2 text-center w-14">G</th>
+                            <th class="py-3.5 px-2 text-center w-14">E</th>
+                            <th class="py-3.5 px-2 text-center w-14">P</th>
+                            <th class="py-3.5 px-2 text-center w-14">GF</th>
+                            <th class="py-3.5 px-2 text-center w-14">GC</th>
+                            <th class="py-3.5 px-2 text-center w-14">DG</th>
+                            <th class="py-3.5 px-3 text-center w-16 bg-neutral-900/80">Pts</th>
+                            <th class="py-3.5 px-4 text-center w-28">Partidos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-table-body">
+                        <!-- Rellenado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Gestión de Partidos de un Equipo -->
+    <div id="matches-admin-modal" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity duration-300" onclick="closeMatchesAdminModal()">
+        <div class="glass-panel w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-neutral-800" onclick="event.stopPropagation()">
+            <!-- Cabecera -->
+            <div class="bg-neutral-900 py-4 px-6 border-b border-neutral-800 flex items-center justify-between">
+                <h3 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    ⚽ Gestionar Partidos: <span id="admin-modal-team-name" class="text-neutral-400">Selección</span>
+                </h3>
+                <button onclick="closeMatchesAdminModal()" class="text-neutral-400 hover:text-white transition-all text-sm font-bold">✕</button>
+            </div>
+            
+            <!-- Cuerpo -->
+            <div class="p-6 space-y-6">
+                <!-- Formulario para Añadir Partido -->
+                <div class="space-y-3 bg-neutral-950 p-4 rounded-lg border border-neutral-900">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-400">Registrar Nuevo Partido</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                        <div>
+                            <label class="text-[10px] text-neutral-500 uppercase font-bold block mb-1">Rival</label>
+                            <select id="new-match-rival" class="w-full bg-neutral-900 border border-neutral-800 text-white rounded p-1.5 text-xs focus:outline-none focus:border-neutral-500">
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div>
+                                <label class="text-[10px] text-neutral-500 uppercase font-bold block mb-1 text-center">Goles Local</label>
+                                <input type="number" id="new-match-score-self" min="0" placeholder="0" class="w-full bg-neutral-900 border border-neutral-800 text-center text-white rounded p-1 text-xs focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-neutral-500 uppercase font-bold block mb-1 text-center">Goles Vis.</label>
+                                <input type="number" id="new-match-score-rival" min="0" placeholder="0" class="w-full bg-neutral-900 border border-neutral-800 text-center text-white rounded p-1 text-xs focus:outline-none">
+                            </div>
+                        </div>
+                        <button onclick="addMatchToActiveTeam()" class="w-full bg-white hover:bg-neutral-200 text-black font-bold text-xs py-2 rounded transition-all">
+                            Añadir
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de Partidos Existentes -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-400">Historial Actual</h4>
+                    <div id="admin-matches-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <!-- Partidos cargados dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notificación -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded bg-white text-black text-xs font-semibold shadow-2xl translate-y-24 opacity-0 transition-all duration-300">
+        Cambios guardados con éxito.
+    </div>
+
+    <script>
+        // Mapeo de banderas
+        const countryFlags = {
+            "venezuela": "ve", "argentina": "ar", "brasil": "br", "uruguay": "uy", "colombia": "co",
+            "chile": "cl", "perú": "pe", "ecuador": "ec", "paraguay": "py", "bolivia": "bo",
+            "méxico": "mx", "estados unidos": "us", "canadá": "ca", "costa rica": "cr", "panamá": "pa",
+            "honduras": "hn", "el salvador": "sv", "guatemala": "gt", "jamaica": "jm", "haití": "ht",
+            "españa": "es", "francia": "fr", "italia": "it", "alemania": "de", "inglaterra": "gb-eng",
+            "portugal": "pt", "países bajos": "nl", "croacia": "hr", "bélgica": "be", "suiza": "ch",
+            "marruecos": "ma", "egipto": "eg", "senegal": "sn", "nigeria": "ng", "camerún": "cm",
+            "ghana": "gh", "argelia": "dz", "túnez": "tn", "costa de marfil": "ci", "sudáfrica": "za",
+            "japón": "jp", "corea del sur": "kr", "arabia saudita": "sa", "australia": "au", "catar": "qa",
+            "irán": "ir", "irak": "iq", "emiratos árabes": "ae"
+        };
+
+        // Estado inicial por defecto
+        const defaultData = {
+            llanos: {
+                direct: 5, repechage: 1,
+                teams: [
+                    { name: "Argentina", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Bolivia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Brasil", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Chile", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Colombia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Ecuador", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Paraguay", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Perú", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Uruguay", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Venezuela", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            andes: {
+                direct: 5, repechage: 1,
+                teams: [
+                    { name: "Canadá", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Costa Rica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "El Salvador", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Estados Unidos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Guatemala", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Haití", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Honduras", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Jamaica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "México", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Panamá", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            centro: {
+                direct: 5, repechage: 1,
+                teams: [
+                    { name: "Alemania", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Bélgica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Croacia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "España", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Francia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Inglaterra", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Italia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Países Bajos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Portugal", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Suiza", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            zulara: {
+                direct: 6, repechage: 1,
+                teams: [
+                    { name: "Argelia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Camerún", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Costa de Marfil", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Egipto", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Ghana", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Marruecos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Nigeria", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Senegal", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Sudáfrica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Túnez", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            oriente: {
+                direct: 6, repechage: 1,
+                teams: [
+                    { name: "Arabia Saudita", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Australia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Catar", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Corea del Sur", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Emiratos Árabes", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Irak", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Irán", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Japón", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            }
+        };
+
+        let state = {};
+        let activeConfed = 'llanos';
+        let activeTeamName = '';
+
+        window.onload = function() {
+            // Cargar datos locales o inicializar
+            const cached = localStorage.getItem('WCVZLA26_standings');
+            if (cached) {
+                state = JSON.parse(cached);
+            } else {
+                state = JSON.parse(JSON.stringify(defaultData));
+            }
+            switchConfederation('llanos');
+        };
+
+        function switchConfederation(confedId) {
+            activeConfed = confedId;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById(`tab-${confedId}`).classList.add('tab-active');
+            renderAdminTable();
+        }
+
+        // Renderizado del panel de administración
+        function renderAdminTable() {
+            const current = state[activeConfed];
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+
+            current.teams.forEach((team) => {
+                const flagCode = countryFlags[team.name.toLowerCase()] || "un";
+                const flagUrl = `https://flagcdn.com/w40/${flagCode}.png`;
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-neutral-900 bg-black hover:bg-neutral-950 transition-all duration-150";
+                
+                const safeName = team.name.replace(/\s+/g, '');
+                
+                tr.innerHTML = `
+                    <td class="py-2.5 px-4 font-semibold text-white">
+                        <div class="flex items-center gap-3">
+                            <img src="${flagUrl}" class="w-6 h-4 object-cover rounded shadow-sm" alt="${team.name}">
+                            <span>${team.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <!-- PJ Deshabilitado para que solo se calcule de G+E+P -->
+                        <input id="pj-${safeName}" type="number" readonly value="${team.pj}" class="w-12 bg-neutral-950/60 text-center py-1 rounded text-neutral-500 text-xs border border-neutral-900 focus:outline-none">
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <input id="g-${safeName}" type="number" oninput="updateField('${team.name}', 'g', this.value)" value="${team.g}" class="w-12 bg-neutral-900 text-center py-1 rounded text-white text-xs border border-neutral-800 focus:outline-none focus:border-white">
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <input id="e-${safeName}" type="number" oninput="updateField('${team.name}', 'e', this.value)" value="${team.e}" class="w-12 bg-neutral-900 text-center py-1 rounded text-white text-xs border border-neutral-800 focus:outline-none focus:border-white">
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <input id="p-${safeName}" type="number" oninput="updateField('${team.name}', 'p', this.value)" value="${team.p}" class="w-12 bg-neutral-900 text-center py-1 rounded text-white text-xs border border-neutral-800 focus:outline-none focus:border-white">
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <input id="gf-${safeName}" type="number" oninput="updateField('${team.name}', 'gf', this.value)" value="${team.gf}" class="w-12 bg-neutral-900 text-center py-1 rounded text-white text-xs border border-neutral-800 focus:outline-none focus:border-white">
+                    </td>
+                    <td class="py-2.5 px-2 text-center">
+                        <input id="gc-${safeName}" type="number" oninput="updateField('${team.name}', 'gc', this.value)" value="${team.gc}" class="w-12 bg-neutral-900 text-center py-1 rounded text-white text-xs border border-neutral-800 focus:outline-none focus:border-white">
+                    </td>
+                    <td class="py-2.5 px-2 text-center font-bold text-neutral-400">
+                        <span id="dg-${safeName}">${team.dg >= 0 ? '+' + team.dg : team.dg}</span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center bg-neutral-900/40">
+                        <!-- Puntos Deshabilitados para que solo se calculen de las victorias y empates -->
+                        <input id="pts-${safeName}" type="number" readonly value="${team.pts}" class="w-14 bg-neutral-950/60 text-center py-1 rounded text-neutral-300 text-xs border border-neutral-900 font-extrabold focus:outline-none">
+                    </td>
+                    <td class="py-2.5 px-4 text-center">
+                        <button onclick="openMatchesAdmin('${team.name}')" class="px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded text-[11px] font-semibold border border-neutral-800 transition-all">
+                            Partidos (${team.matches ? team.matches.length : 0})
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Actualizar estadísticas individuales con cálculo automatizado en vivo
+        function updateField(teamName, field, value) {
+            const num = parseInt(value) || 0;
+            const current = state[activeConfed];
+            const team = current.teams.find(t => t.name === teamName);
+            
+            if (team) {
+                team[field] = num;
+                const safeName = teamName.replace(/\s+/g, '');
+
+                // 1. Auto-calcular Partidos Jugados (PJ) y Puntos (Pts) al modificar G, E o P
+                if (field === 'g' || field === 'e' || field === 'p') {
+                    team.pj = team.g + team.e + team.p;
+                    team.pts = (team.g * 3) + team.e;
+
+                    // Actualizar el DOM en tiempo real para no re-renderizar todo y no perder el foco del teclado
+                    const pjInput = document.getElementById(`pj-${safeName}`);
+                    const ptsInput = document.getElementById(`pts-${safeName}`);
+                    if (pjInput) pjInput.value = team.pj;
+                    if (ptsInput) ptsInput.value = team.pts;
+                }
+
+                // 2. Auto-calcular Diferencia de Goles (DG) al modificar GF o GC
+                if (field === 'gf' || field === 'gc') {
+                    team.dg = team.gf - team.gc;
+                    const dgSpan = document.getElementById(`dg-${safeName}`);
+                    if (dgSpan) {
+                        dgSpan.innerText = team.dg >= 0 ? `+${team.dg}` : team.dg;
+                    }
+                }
+
+                // 3. Auto-guardar inmediatamente en LocalStorage en cada pulsación de tecla (oninput)
+                // Esto hace que el archivo de tablas públicas (index.html) se actualice en tiempo real.
+                localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+            }
+        }
+
+        // Abrir Modal de Gestión de Partidos
+        function openMatchesAdmin(teamName) {
+            activeTeamName = teamName;
+            document.getElementById('admin-modal-team-name').innerText = teamName;
+            
+            const current = state[activeConfed];
+            const team = current.teams.find(t => t.name === teamName);
+            if (!team) return;
+
+            // Rellenar selector de rivales (excluyendo al propio equipo)
+            const rivalSelect = document.getElementById('new-match-rival');
+            rivalSelect.innerHTML = '';
+            current.teams.forEach(t => {
+                if (t.name !== teamName) {
+                    const opt = document.createElement('option');
+                    opt.value = t.name;
+                    opt.innerText = t.name;
+                    rivalSelect.appendChild(opt);
+                }
+            });
+
+            renderMatchesList(team);
+            document.getElementById('matches-admin-modal').classList.remove('hidden');
+        }
+
+        function closeMatchesAdminModal() {
+            document.getElementById('matches-admin-modal').classList.add('hidden');
+            renderAdminTable();
+        }
+
+        // Renderizar partidos del equipo en el modal
+        function renderMatchesList(team) {
+            const listDiv = document.getElementById('admin-matches-list');
+            listDiv.innerHTML = '';
+
+            if (!team.matches || team.matches.length === 0) {
+                listDiv.innerHTML = '<p class="text-neutral-600 text-center text-xs py-4">No hay partidos registrados para esta selección.</p>';
+                return;
+            }
+
+            team.matches.forEach((match, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between p-2 rounded bg-neutral-900 border border-neutral-850 text-xs text-neutral-300 animate-row";
+                row.innerHTML = `
+                    <span class="font-semibold text-left w-2/5 truncate">${match.home}</span>
+                    <span class="font-extrabold text-white bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">${match.homeScore} - ${match.awayScore}</span>
+                    <span class="font-semibold text-right w-2/5 truncate">${match.away}</span>
+                    <button onclick="removeMatch('${idx}')" class="text-red-500 hover:text-red-400 font-bold ml-2 px-1 text-[10px]">✕</button>
+                `;
+                listDiv.appendChild(row);
+            });
+        }
+
+        // Añadir partido jugado y ACTUALIZAR estadísticas de forma totalmente automatizada
+        function addMatchToActiveTeam() {
+            const current = state[activeConfed];
+            const team = current.teams.find(t => t.name === activeTeamName);
+            const rivalName = document.getElementById('new-match-rival').value;
+            const scoreSelf = parseInt(document.getElementById('new-match-score-self').value) || 0;
+            const scoreRival = parseInt(document.getElementById('new-match-score-rival').value) || 0;
+
+            if (!team) return;
+
+            if (!team.matches) team.matches = [];
+
+            // 1. Añadir el partido al equipo local (activo)
+            team.matches.push({
+                home: activeTeamName,
+                away: rivalName,
+                homeScore: scoreSelf,
+                awayScore: scoreRival
+            });
+
+            // 2. Sumar estadísticas de goles e historial del equipo local de inmediato
+            team.gf += scoreSelf;
+            team.gc += scoreRival;
+            team.dg = team.gf - team.gc;
+            if (scoreSelf > scoreRival) {
+                team.g += 1;
+            } else if (scoreSelf < scoreRival) {
+                team.p += 1;
+            } else {
+                team.e += 1;
+            }
+            team.pj = team.g + team.e + team.p;
+            team.pts = (team.g * 3) + team.e;
+
+            // 3. Añadir partido y sumar estadísticas de goles e historial de forma recíproca al Rival
+            const rivalTeam = current.teams.find(t => t.name === rivalName);
+            if (rivalTeam) {
+                if (!rivalTeam.matches) rivalTeam.matches = [];
+                rivalTeam.matches.push({
+                    home: activeTeamName,
+                    away: rivalName,
+                    homeScore: scoreSelf,
+                    awayScore: scoreRival
+                });
+
+                rivalTeam.gf += scoreRival;
+                rivalTeam.gc += scoreSelf;
+                rivalTeam.dg = rivalTeam.gf - rivalTeam.gc;
+                if (scoreRival > scoreSelf) {
+                    rivalTeam.g += 1;
+                } else if (scoreRival < scoreSelf) {
+                    rivalTeam.p += 1;
+                } else {
+                    rivalTeam.e += 1;
+                }
+                rivalTeam.pj = rivalTeam.g + rivalTeam.e + rivalTeam.p;
+                rivalTeam.pts = (rivalTeam.g * 3) + rivalTeam.e;
+            }
+
+            // Limpiar inputs del modal
+            document.getElementById('new-match-score-self').value = '';
+            document.getElementById('new-match-score-rival').value = '';
+
+            renderMatchesList(team);
+            // Guardar al instante el nuevo estado calculado en localStorage
+            localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+            showToast(`Partido registrado. ¡Estadísticas actualizadas!`);
+        }
+
+        // Eliminar partido y RESTAR automáticamente las estadísticas calculadas (Protección contra negativos incluida)
+        function removeMatch(index) {
+            const current = state[activeConfed];
+            const team = current.teams.find(t => t.name === activeTeamName);
+            if (!team) return;
+
+            const deleted = team.matches.splice(index, 1)[0];
+
+            // Identificar los goles de cada equipo independientemente del local/visitante
+            const isHome = (deleted.home === team.name);
+            const teamScore = isHome ? deleted.homeScore : deleted.awayScore;
+            const opponentScore = isHome ? deleted.awayScore : deleted.homeScore;
+            const opponentName = isHome ? deleted.away : deleted.home;
+
+            // Revertir estadísticas del equipo activo con límite mínimo en cero (0)
+            team.gf = Math.max(0, team.gf - teamScore);
+            team.gc = Math.max(0, team.gc - opponentScore);
+            if (teamScore > opponentScore) {
+                team.g = Math.max(0, team.g - 1);
+            } else if (teamScore < opponentScore) {
+                team.p = Math.max(0, team.p - 1);
+            } else {
+                team.e = Math.max(0, team.e - 1);
+            }
+            team.pj = team.g + team.e + team.p;
+            team.pts = (team.g * 3) + team.e;
+            team.dg = team.gf - team.gc;
+
+            // Revertir estadísticas del rival recíproco con límite mínimo en cero (0)
+            const rivalTeam = current.teams.find(t => t.name === opponentName);
+            if (rivalTeam && rivalTeam.matches) {
+                const revIdx = rivalTeam.matches.findIndex(m => 
+                    (m.home === deleted.home && m.away === deleted.away && m.homeScore === deleted.homeScore && m.awayScore === deleted.awayScore)
+                );
+                if (revIdx !== -1) {
+                    rivalTeam.matches.splice(revIdx, 1);
+                }
+
+                rivalTeam.gf = Math.max(0, rivalTeam.gf - opponentScore);
+                rivalTeam.gc = Math.max(0, rivalTeam.gc - teamScore);
+                if (opponentScore > teamScore) {
+                    rivalTeam.g = Math.max(0, rivalTeam.g - 1);
+                } else if (opponentScore < teamScore) {
+                    rivalTeam.p = Math.max(0, rivalTeam.p - 1);
+                } else {
+                    rivalTeam.e = Math.max(0, rivalTeam.e - 1);
+                }
+                rivalTeam.pj = rivalTeam.g + rivalTeam.e + rivalTeam.p;
+                rivalTeam.pts = (rivalTeam.g * 3) + rivalTeam.e;
+                rivalTeam.dg = rivalTeam.gf - rivalTeam.gc;
+            }
+
+            renderMatchesList(team);
+            // Guardar al instante los cambios
+            localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+            showToast(`Partido eliminado y estadísticas revertidas de forma segura.`);
+        }
+
+        // RECALCULAR estadísticas completas de todas las selecciones desde el historial de partidos
+        function recalculateAllGroupsStats() {
+            Object.keys(state).forEach(confedId => {
+                const current = state[confedId];
+                current.teams.forEach(team => {
+                    team.pj = 0;
+                    team.g = 0;
+                    team.e = 0;
+                    team.p = 0;
+                    team.gf = 0;
+                    team.gc = 0;
+                    team.dg = 0;
+                    team.pts = 0;
+
+                    if (team.matches && team.matches.length > 0) {
+                        team.matches.forEach(match => {
+                            const isHome = (match.home === team.name);
+                            const teamScore = isHome ? match.homeScore : match.awayScore;
+                            const opponentScore = isHome ? match.awayScore : match.homeScore;
+
+                            team.gf += teamScore;
+                            team.gc += opponentScore;
+                            if (teamScore > opponentScore) {
+                                team.g += 1;
+                                team.pts += 3;
+                            } else if (teamScore < opponentScore) {
+                                team.p += 1;
+                            } else {
+                                team.e += 1;
+                                team.pts += 1;
+                            }
+                            team.pj += 1;
+                        });
+                    }
+                    team.dg = team.gf - team.gc;
+                });
+
+                // Ordenar automáticamente las clasificaciones según reglas de desempate FIFA
+                current.teams.sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts;
+                    if (b.dg !== a.dg) return b.dg - a.dg;
+                    if (b.gf !== a.gf) return b.gf - a.gf;
+                    return a.name.localeCompare(b.name);
+                });
+            });
+
+            localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+            renderAdminTable();
+            showToast("Estadísticas completamente recalculadas desde el historial.");
+        }
+
+        // Ordenar y guardar todos los cambios en LocalStorage siguiendo criterios de desempate FIFA
+        function saveAllChanges() {
+            // Ordenar automáticamente las clasificaciones antes de guardar siguiendo reglas FIFA
+            Object.keys(state).forEach(conf => {
+                state[conf].teams.sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts;
+                    if (b.dg !== a.dg) return b.dg - a.dg;
+                    if (b.gf !== a.gf) return b.gf - a.gf;
+                    return a.name.localeCompare(b.name);
+                });
+            });
+
+            localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+            renderAdminTable();
+            showToast("Estadísticas ordenadas y guardadas con éxito.");
+        }
+
+        // Reiniciar todo a cero
+        function resetDataToZero() {
+            if (confirm("¿Estás seguro de que deseas restablecer todos los puntos, estadísticas y partidos a cero?")) {
+                state = JSON.parse(JSON.stringify(defaultData));
+                localStorage.setItem('WCVZLA26_standings', JSON.stringify(state));
+                renderAdminTable();
+                showToast("Datos reiniciados por completo.");
+            }
+        }
+
+        // Mostrar Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = "fixed bottom-6 right-6 z-50 px-5 py-3 rounded bg-white text-black text-xs font-semibold shadow-2xl translate-y-0 opacity-100 transition-all duration-300";
+            
+            setTimeout(() => {
+                toast.className = "fixed bottom-6 right-6 z-50 px-5 py-3 rounded bg-white text-black text-xs font-semibold shadow-2xl translate-y-24 opacity-0 transition-all duration-300";
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
