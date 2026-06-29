@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCVZLA26 - Clasificación</title>
+    <!-- Tailwind CSS para diseño y adaptabilidad responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para tipografía moderna de alta lectura -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Fondo negro absoluto solicitado por el usuario */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        /* Paneles con fondo gris oscuro minimalista */
+        .glass-panel {
+            background: #090909;
+            border: 1px solid #161616;
+        }
+        /* Efecto activo en pestañas de navegación */
+        .tab-active {
+            border-bottom: 2px solid #ffffff;
+            color: #ffffff;
+            background: #090909;
+        }
+        /* Ocultar barra de scroll para navegadores basados en Webkit sin perder scroll horizontal */
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animación personalizada para la entrada de las filas */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-row {
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen py-8 px-4 sm:px-6 lg:px-8 antialiased">
+
+    <!-- Contenedor de la Aplicación -->
+    <main class="max-w-5xl mx-auto">
+        
+        <!-- Pestañas de Navegación por Confederación Real (Sin emojis) -->
+        <div class="flex flex-nowrap overflow-x-auto gap-1 mb-6 border-b border-neutral-900 scrollbar-none transition-all duration-300">
+            <button onclick="switchConfederation('llanos')" id="tab-llanos" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CONMEBOL
+            </button>
+            <button onclick="switchConfederation('andes')" id="tab-andes" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CONCACAF
+            </button>
+            <button onclick="switchConfederation('centro')" id="tab-centro" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                UEFA
+            </button>
+            <button onclick="switchConfederation('zulara')" id="tab-zulara" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                CAF
+            </button>
+            <button onclick="switchConfederation('oriente')" id="tab-oriente" class="tab-btn px-5 py-3 text-xs sm:text-sm font-bold whitespace-nowrap transition-all duration-300 text-neutral-500 hover:text-neutral-200 focus:outline-none">
+                AFC / OFC
+            </button>
+        </div>
+
+        <!-- Leyenda de colores de clasificación discreta -->
+        <div class="flex flex-wrap gap-4 mb-4 text-[10px] sm:text-xs text-neutral-400 font-medium">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/20"></span> Clasificación Directa
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-sky-400 rounded-full shadow-lg shadow-sky-400/20"></span> Repechaje
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-neutral-700 rounded-full"></span> Eliminado
+            </div>
+        </div>
+
+        <!-- Contenedor Principal de la Tabla -->
+        <div class="glass-panel rounded-xl overflow-hidden shadow-2xl transition-all duration-300 border border-neutral-800/80">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-neutral-900/60 text-neutral-400 font-bold uppercase tracking-wider text-[10px] sm:text-xs border-b border-neutral-800">
+                            <th class="py-3 px-3 text-center w-12">Pos</th>
+                            <th class="py-3 px-4 min-w-[150px] sm:min-w-[200px]">Selección</th>
+                            <th class="py-3 px-3 text-center w-12">PJ</th>
+                            <th class="py-3 px-3 text-center w-12">G</th>
+                            <th class="py-3 px-3 text-center w-12">E</th>
+                            <th class="py-3 px-3 text-center w-12">P</th>
+                            <th class="py-3 px-3 text-center w-12 hidden sm:table-cell">GF</th>
+                            <th class="py-3 px-3 text-center w-12 hidden sm:table-cell">GC</th>
+                            <th class="py-3 px-3 text-center w-14">DG</th>
+                            <th class="py-3 px-4 text-center w-16 bg-neutral-900 font-bold text-white">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Generado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Minimalista de Historial de Partidos -->
+    <div id="matches-modal" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity duration-300" onclick="closeMatchesModalOnOutsideClick(event)">
+        <div class="glass-panel w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-neutral-800 animate-row" onclick="event.stopPropagation()">
+            <!-- Cabecera del Modal -->
+            <div class="bg-neutral-900/80 py-4 px-6 border-b border-neutral-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img id="modal-flag" src="" class="w-6 h-4 object-cover rounded hidden" alt="Bandera">
+                    <h3 id="modal-title" class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">Historial de Partidos</h3>
+                </div>
+                <button onclick="closeMatchesModal()" class="text-neutral-400 hover:text-white transition-all text-xs font-bold px-2 py-1">
+                    ✕
+                </button>
+            </div>
+            <!-- Contenido del Modal -->
+            <div class="p-6">
+                <div id="modal-content" class="space-y-3 max-h-64 overflow-y-auto pr-1 text-center">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Código de inicialización de datos y banderas -->
+    <script>
+        // Mapeo de banderas oficiales en formato de imagen SVG plano de flagcdn
+        const countryFlags = {
+            // CONMEBOL
+            "venezuela": "ve", "argentina": "ar", "brasil": "br", "uruguay": "uy", "colombia": "co",
+            "chile": "cl", "perú": "pe", "ecuador": "ec", "paraguay": "py", "bolivia": "bo",
+            // CONCACAF
+            "méxico": "mx", "estados unidos": "us", "canadá": "ca", "costa rica": "cr", "panamá": "pa",
+            "honduras": "hn", "el salvador": "sv", "guatemala": "gt", "jamaica": "jm", "haití": "ht",
+            // UEFA
+            "españa": "es", "francia": "fr", "italia": "it", "alemania": "de", "inglaterra": "gb-eng",
+            "portugal": "pt", "países bajos": "nl", "croacia": "hr", "bélgica": "be", "suiza": "ch",
+            // CAF
+            "marruecos": "ma", "egipto": "eg", "senegal": "sn", "nigeria": "ng", "camerún": "cm",
+            "ghana": "gh", "argelia": "dz", "túnez": "tn", "costa de marfil": "ci", "sudáfrica": "za",
+            // AFC / OFC
+            "japón": "jp", "corea del sur": "kr", "arabia saudita": "sa", "australia": "au", "catar": "qa",
+            "irán": "ir", "irak": "iq", "emiratos árabes": "ae"
+        };
+
+        // Base de datos de las 5 confederaciones limpia por defecto (estructura idéntica a admin)
+        const defaultTournamentData = {
+            llanos: {
+                direct: 5,
+                repechage: 1,
+                teams: [
+                    { name: "Argentina", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Bolivia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Brasil", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Chile", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Colombia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Ecuador", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Paraguay", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Perú", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Uruguay", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Venezuela", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            andes: {
+                direct: 5,
+                repechage: 1,
+                teams: [
+                    { name: "Canadá", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Costa Rica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "El Salvador", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Estados Unidos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Guatemala", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Haití", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Honduras", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Jamaica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "México", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Panamá", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            centro: {
+                direct: 5,
+                repechage: 1,
+                teams: [
+                    { name: "Alemania", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Bélgica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Croacia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "España", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Francia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Inglaterra", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Italia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Países Bajos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Portugal", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Suiza", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            zulara: {
+                direct: 6,
+                repechage: 1,
+                teams: [
+                    { name: "Argelia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Camerún", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Costa de Marfil", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Egipto", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Ghana", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Marruecos", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Nigeria", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Senegal", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Sudáfrica", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Túnez", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            },
+            oriente: {
+                direct: 6,
+                repechage: 1,
+                teams: [
+                    { name: "Arabia Saudita", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Australia", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Catar", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Corea del Sur", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Emiratos Árabes", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Irak", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Irán", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] },
+                    { name: "Japón", pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0, matches: [] }
+                ]
+            }
+        };
+
+        let tournamentData = {};
+        let activeConfed = 'llanos';
+
+        // Cargar los datos desde el almacenamiento local
+        window.onload = function() {
+            const cached = localStorage.getItem('WCVZLA26_standings');
+            if (cached) {
+                tournamentData = JSON.parse(cached);
+            } else {
+                tournamentData = JSON.parse(JSON.stringify(defaultTournamentData));
+            }
+            switchConfederation('llanos');
+        };
+
+        // Escuchar cambios en el almacenamiento por si el panel de control se usa en otra pestaña
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'WCVZLA26_standings' && e.newValue) {
+                tournamentData = JSON.parse(e.newValue);
+                renderTable();
+            }
+        });
+
+        // Cambiar entre confederaciones
+        function switchConfederation(confedId) {
+            activeConfed = confedId;
+
+            // Cambiar estados visuales de los botones de pestañas
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById(`tab-${confedId}`).classList.add('tab-active');
+
+            renderTable();
+        }
+
+        // Renderizado dinámico de la tabla actual con animación de entrada fluida
+        function renderTable() {
+            const current = tournamentData[activeConfed];
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            const limitDirect = current.direct;
+            const limitRepechage = limitDirect + current.repechage;
+
+            current.teams.forEach((team, index) => {
+                const pos = index + 1;
+                let bgIndicator = "border-l-4 border-neutral-800";
+                let badgeClass = "bg-neutral-900 text-neutral-500";
+
+                // Colorear indicador lateral según el rango de clasificación
+                if (pos <= limitDirect) {
+                    bgIndicator = "border-l-4 border-emerald-500 bg-emerald-950/5";
+                    badgeClass = "bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/20";
+                } else if (pos <= limitRepechage) {
+                    bgIndicator = "border-l-4 border-sky-400 bg-sky-950/5";
+                    badgeClass = "bg-sky-500/15 text-sky-400 font-bold border border-sky-400/20";
+                }
+
+                // Generar código de bandera compatible con flagcdn
+                const flagCode = countryFlags[team.name.toLowerCase()] || "un";
+                const flagUrl = `https://flagcdn.com/w40/${flagCode}.png`;
+
+                const tr = document.createElement('tr');
+                
+                // Aplicamos la animación 'animate-row', retraso progresivo de transición y acción onClick
+                tr.className = `border-b border-neutral-900 transition-all duration-300 hover:bg-neutral-900/60 cursor-pointer ${bgIndicator} animate-row`;
+                tr.style.animationDelay = `${index * 30}ms`;
+                tr.setAttribute('onclick', `showTeamMatches('${team.name}')`);
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-center">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-[11px] ${badgeClass} transition-colors duration-300">${pos}</span>
+                    </td>
+                    <td class="py-3 px-4 font-semibold text-white">
+                        <div class="flex items-center gap-3">
+                            <img src="${flagUrl}" class="w-6 h-4 object-cover rounded shadow-sm border border-neutral-800/20 transition-transform duration-300 hover:scale-110" alt="${team.name}" onerror="this.src='https://flagcdn.com/w40/un.png'">
+                            <span class="tracking-wide">${team.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-center text-neutral-300 font-medium">${team.pj}</td>
+                    <td class="py-3 px-3 text-center text-neutral-400">${team.g}</td>
+                    <td class="py-3 px-3 text-center text-neutral-400">${team.e}</td>
+                    <td class="py-3 px-3 text-center text-neutral-400">${team.p}</td>
+                    <td class="py-3 px-3 text-center text-neutral-400 hidden sm:table-cell">${team.gf}</td>
+                    <td class="py-3 px-3 text-center text-neutral-400 hidden sm:table-cell">${team.gc}</td>
+                    <td class="py-3 px-3 text-center font-bold text-neutral-300">${team.dg}</td>
+                    <td class="py-3 px-4 text-center bg-neutral-900/40 font-bold text-white text-sm transition-all duration-300">
+                        ${team.pts}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Mostrar partidos jugados por una selección
+        function showTeamMatches(teamName) {
+            const current = tournamentData[activeConfed];
+            const team = current.teams.find(t => t.name === teamName);
+            
+            if (!team) return;
+
+            // Configurar cabecera del modal
+            const flagCode = countryFlags[teamName.toLowerCase()] || "un";
+            const flagUrl = `https://flagcdn.com/w40/${flagCode}.png`;
+            const modalFlag = document.getElementById('modal-flag');
+            const modalTitle = document.getElementById('modal-title');
+            
+            modalFlag.src = flagUrl;
+            modalFlag.classList.remove('hidden');
+            modalTitle.innerText = `Partidos de ${teamName}`;
+
+            // Configurar lista de partidos
+            const contentDiv = document.getElementById('modal-content');
+            contentDiv.innerHTML = '';
+
+            if (!team.matches || team.matches.length === 0) {
+                // Estado vacío: Sin partidos jugados por el momento
+                contentDiv.innerHTML = `
+                    <div class="py-8 text-neutral-500">
+                        <svg class="w-8 h-8 mx-auto mb-2 opacity-40 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-xs font-semibold uppercase tracking-wider">Sin partidos disputados</p>
+                        <p class="text-[10px] text-neutral-600 mt-1">Los datos de juego se actualizarán en cuanto ruede el balón.</p>
+                    </div>
+                `;
+            } else {
+                // Renderizar los partidos disputados
+                team.matches.forEach(match => {
+                    const matchRow = document.createElement('div');
+                    matchRow.className = "flex items-center justify-between p-3 rounded bg-neutral-950 border border-neutral-900 text-xs text-neutral-300";
+                    matchRow.innerHTML = `
+                        <span class="font-semibold text-left w-2/5 truncate">${match.home}</span>
+                        <span class="font-extrabold text-white text-center bg-neutral-900 px-3 py-1 rounded border border-neutral-800">${match.homeScore} - ${match.awayScore}</span>
+                        <span class="font-semibold text-right w-2/5 truncate">${match.away}</span>
+                    `;
+                    contentDiv.appendChild(matchRow);
+                });
+            }
+
+            // Mostrar Modal
+            const modal = document.getElementById('matches-modal');
+            modal.classList.remove('hidden');
+        }
+
+        // Cerrar modal
+        function closeMatchesModal() {
+            document.getElementById('matches-modal').classList.add('hidden');
+        }
+
+        // Cerrar modal al hacer clic fuera del panel principal
+        function closeMatchesModalOnOutsideClick(event) {
+            closeMatchesModal();
+        }
+    </script>
+</body>
+</html>
